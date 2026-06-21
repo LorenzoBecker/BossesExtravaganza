@@ -1,0 +1,739 @@
+{
+  "enabled": true,
+  "enableLabs": false,
+  "debugLogging": false,
+  "maximumAdditionalBossesPerRaid": 3,
+  "excludedZoneNameFragments": [
+    "snip",
+    "sniper",
+    "marksman"
+  ],
+  "maps": {
+    "bigmap": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 0,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 0,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "factory4_day": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 0,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 7,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 4
+      },
+      "generalZones": [
+        "BotZone"
+      ],
+      "excludedZones": []
+    },
+    "factory4_night": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 0,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 7,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 4
+      },
+      "generalZones": [
+        "BotZone"
+      ],
+      "excludedZones": []
+    },
+    "interchange": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 0,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 7,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 4
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "lighthouse": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 0,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "rezervbase": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 7,
+        "bossGluhar": 0,
+        "bossBoar": 4,
+        "bossKnight": 4
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "sandbox": {
+      "enabled": false,
+      "bosses": {
+        "bossBully": 0,
+        "bossKilla": 0,
+        "bossTagilla": 0,
+        "bossKojaniy": 0,
+        "bossSanitar": 0,
+        "bossKolontay": 0,
+        "bossPartisan": 0,
+        "bossGluhar": 0,
+        "bossBoar": 0,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "sandbox_high": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 0,
+        "bossPartisan": 7,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 4
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "shoreline": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 0,
+        "bossKolontay": 7,
+        "bossPartisan": 0,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "tarkovstreets": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 7,
+        "bossSanitar": 7,
+        "bossKolontay": 0,
+        "bossPartisan": 7,
+        "bossGluhar": 7,
+        "bossBoar": 0,
+        "bossKnight": 4
+      },
+      "generalZones": [],
+      "excludedZones": []
+    },
+    "woods": {
+      "enabled": true,
+      "bosses": {
+        "bossBully": 7,
+        "bossKilla": 7,
+        "bossTagilla": 7,
+        "bossKojaniy": 0,
+        "bossSanitar": 7,
+        "bossKolontay": 7,
+        "bossPartisan": 0,
+        "bossGluhar": 4,
+        "bossBoar": 4,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": [
+        "ZoneDepo"
+      ]
+    },
+    "labyrinth": {
+      "enabled": false,
+      "bosses": {
+        "bossBully": 0,
+        "bossKilla": 0,
+        "bossTagilla": 0,
+        "bossKojaniy": 0,
+        "bossSanitar": 0,
+        "bossKolontay": 0,
+        "bossPartisan": 0,
+        "bossGluhar": 0,
+        "bossBoar": 0,
+        "bossKnight": 0
+      },
+      "generalZones": [],
+      "excludedZones": []
+    }
+  },
+  "bossZoneOverrides": {
+    "bigmap": {
+      "bossBoar": [],
+      "bossKilla": [],
+      "bossTagilla": []
+    },
+    "woods": {
+      "bossBoar": [],
+      "bossKilla": [],
+      "bossSanitar": []
+    }
+  },
+  "bosses": [
+    {
+      "role": "bossBully",
+      "displayName": "Reshala",
+      "sourceMap": "bigmap",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": true
+    },
+    {
+      "role": "bossKilla",
+      "displayName": "Killa",
+      "sourceMap": "interchange",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    },
+    {
+      "role": "bossTagilla",
+      "displayName": "Tagilla",
+      "sourceMap": "factory4_day",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    },
+    {
+      "role": "bossKojaniy",
+      "displayName": "Shturman",
+      "sourceMap": "woods",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    },
+    {
+      "role": "bossSanitar",
+      "displayName": "Sanitar",
+      "sourceMap": "shoreline",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    },
+    {
+      "role": "bossKolontay",
+      "displayName": "Kollontay",
+      "sourceMap": "tarkovstreets",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": true
+    },
+    {
+      "role": "bossPartisan",
+      "displayName": "Partisan",
+      "sourceMap": "bigmap",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    },
+    {
+      "role": "bossGluhar",
+      "displayName": "Glukhar",
+      "sourceMap": "rezervbase",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": true
+    },
+    {
+      "role": "bossBoar",
+      "displayName": "Kaban",
+      "sourceMap": "tarkovstreets",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": true
+    },
+    {
+      "role": "bossKnight",
+      "displayName": "Goons",
+      "sourceMap": "lighthouse",
+      "enabled": true,
+      "spawnTime": -1,
+      "randomTimeSpawn": false,
+      "forceSpawn": false,
+      "ignoreMaxBots": false
+    }
+  ],
+  "zoneSafety": {
+    "requireSpawnPointInZone": true,
+    "promoteBotSpawnPointsToBoss": true,
+    "promotionSourceCategories": [
+      "Bot",
+      "BotPmc"
+    ],
+    "preferNativeBossSpawnPoints": true,
+    "avoidAlreadyUsedBossZones": true,
+    "fallbackToPromotedBotSpawnPoints": true
+  },
+  "bossProfiles": {
+    "bossBoar": {
+      "tier": "heavy"
+    },
+    "bossGluhar": {
+      "tier": "heavy"
+    },
+    "bossKolontay": {
+      "tier": "medium"
+    },
+    "bossSanitar": {
+      "tier": "medium"
+    },
+    "bossKojaniy": {
+      "tier": "medium"
+    },
+    "bossBully": {
+      "tier": "medium"
+    },
+    "bossKilla": {
+      "tier": "solo"
+    },
+    "bossTagilla": {
+      "tier": "solo"
+    },
+    "bossPartisan": {
+      "tier": "solo"
+    },
+    "bossKnight": {
+      "tier": "specialGoons",
+      "treatAsSoloOnNonVanillaMaps": true,
+      "vanillaMaps": [
+        "bigmap",
+        "woods",
+        "shoreline",
+        "lighthouse"
+      ]
+    }
+  },
+  "tierBehaviors": {
+    "heavy": {
+      "preferNativeBossSpawnPoints": true,
+      "allowPromotedBotSpawnPoints": true,
+      "allowAlreadyUsedBossZones": true
+    },
+    "medium": {
+      "preferNativeBossSpawnPoints": true,
+      "allowPromotedBotSpawnPoints": true,
+      "allowAlreadyUsedBossZones": true
+    },
+    "solo": {
+      "preferNativeBossSpawnPoints": true,
+      "allowPromotedBotSpawnPoints": true,
+      "allowAlreadyUsedBossZones": true
+    },
+    "specialGoons": {
+      "preferNativeBossSpawnPoints": true,
+      "allowPromotedBotSpawnPoints": true,
+      "allowAlreadyUsedBossZones": true
+    }
+  },
+  "tierZoneOverrides": {
+    "bigmap": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneScavBase"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneDormitory",
+          "ZoneGasStation",
+          "ZoneScavBase"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneDormitory",
+          "ZoneGasStation",
+          "ZoneScavBase",
+          "ZoneFactorySide",
+          "ZoneCustoms",
+          "ZoneBlockPost",
+          "ZoneCrossRoad",
+          "ZoneBrige"
+        ]
+      }
+    },
+    "woods": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneWoodCutter",
+          "ZoneScavBase2",
+          "ZoneUsecBase",
+          "ZoneBrokenVill",
+          "ZoneClearVill"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneWoodCutter",
+          "ZoneScavBase2",
+          "ZoneMiniHouse",
+          "ZoneBrokenVill",
+          "ZoneClearVill"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneWoodCutter",
+          "ZoneScavBase2",
+          "ZoneUsecBase",
+          "ZoneBrokenVill",
+          "ZoneClearVill",
+          "ZoneRoad",
+          "ZoneStoneBunker"
+        ]
+      }
+    },
+    "shoreline": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneSanatorium1",
+          "ZoneSanatorium2",
+          "ZonePort",
+          "ZonePowerStation",
+          "ZoneMeteoStation"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneSanatorium1",
+          "ZoneSanatorium2",
+          "ZoneGreenHouses",
+          "ZonePort",
+          "ZonePowerStation",
+          "ZoneMeteoStation"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneSanatorium1",
+          "ZoneSanatorium2",
+          "ZoneGreenHouses",
+          "ZonePort",
+          "ZonePowerStation",
+          "ZoneMeteoStation",
+          "ZoneForestGasStation",
+          "ZoneSmuglers"
+        ]
+      }
+    },
+    "interchange": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneCenter",
+          "ZoneCenterBot",
+          "ZoneOLI",
+          "ZoneIDEA",
+          "ZoneGoshan"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneCenter",
+          "ZoneCenterBot",
+          "ZoneOLI",
+          "ZoneIDEA",
+          "ZoneGoshan",
+          "ZoneIDEAPark",
+          "ZoneOLIPark"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneCenter",
+          "ZoneCenterBot",
+          "ZoneOLI",
+          "ZoneIDEA",
+          "ZoneGoshan",
+          "ZoneIDEAPark",
+          "ZoneOLIPark",
+          "ZoneTrucks"
+        ]
+      }
+    },
+    "rezervbase": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneRailStrorage",
+          "ZonePTOR2",
+          "ZoneBarrack",
+          "ZoneSubStorage",
+          "ZoneBunkerStorage",
+          "ZoneSubCommand"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneRailStrorage",
+          "ZonePTOR2",
+          "ZoneBarrack",
+          "ZoneSubStorage",
+          "ZoneBunkerStorage",
+          "ZoneSubCommand",
+          "ZonePTOR1"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneRailStrorage",
+          "ZonePTOR2",
+          "ZoneBarrack",
+          "ZoneSubStorage",
+          "ZoneBunkerStorage",
+          "ZoneSubCommand",
+          "ZonePTOR1"
+        ]
+      }
+    },
+    "tarkovstreets": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneCarShowroom",
+          "ZoneMvd",
+          "ZoneConcordiaParking",
+          "ZoneConcordia_1",
+          "ZoneHotel_1",
+          "ZoneHotel_2",
+          "ZoneCinema"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneMvd",
+          "ZoneClimova",
+          "ZoneCarShowroom",
+          "ZoneConcordiaParking",
+          "ZoneConcordia_1",
+          "ZoneHotel_1",
+          "ZoneHotel_2",
+          "ZoneCinema",
+          "ZoneConstruction"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneCarShowroom",
+          "ZoneMvd",
+          "ZoneClimova",
+          "ZoneConcordiaParking",
+          "ZoneConcordia_1",
+          "ZoneHotel_1",
+          "ZoneHotel_2",
+          "ZoneCinema",
+          "ZoneConstruction",
+          "ZoneFactory",
+          "ZoneStilo"
+        ]
+      }
+    },
+    "lighthouse": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "Zone_TreatmentContainers",
+          "Zone_Chalet",
+          "Zone_Blockpost",
+          "Zone_RoofContainers",
+          "Zone_Hellicopter"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "Zone_TreatmentContainers",
+          "Zone_Chalet",
+          "Zone_Blockpost",
+          "Zone_Village",
+          "Zone_Hellicopter"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "Zone_TreatmentContainers",
+          "Zone_Chalet",
+          "Zone_Blockpost",
+          "Zone_Village",
+          "Zone_Hellicopter",
+          "Zone_Rocks",
+          "Zone_TreatmentBeach",
+          "Zone_TreatmentRocks"
+        ]
+      }
+    },
+    "sandbox_high": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "ZoneSandbox"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneSandbox"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "ZoneSandbox"
+        ]
+      }
+    },
+    "factory4_day": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "BotZone"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "BotZone"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "BotZone"
+        ]
+      }
+    },
+    "factory4_night": {
+      "heavy": {
+        "mode": "strict",
+        "zones": [
+          "BotZone"
+        ]
+      },
+      "medium": {
+        "mode": "prefer",
+        "zones": [
+          "BotZone"
+        ]
+      },
+      "solo": {
+        "mode": "prefer",
+        "zones": [
+          "BotZone"
+        ]
+      }
+    }
+  },
+  "bossZoneRules": {
+    "bigmap": {
+      "bossGluhar": {
+        "mode": "strict",
+        "zones": [
+          "ZoneScavBase"
+        ]
+      },
+      "bossBoar": {
+        "mode": "strict",
+        "zones": [
+          "ZoneScavBase"
+        ]
+      }
+    }
+  }
+}

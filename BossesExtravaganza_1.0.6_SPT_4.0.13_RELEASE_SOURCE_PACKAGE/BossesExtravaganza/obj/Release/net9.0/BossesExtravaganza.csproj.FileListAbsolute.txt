@@ -1,0 +1,12 @@
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\bin\Release\net9.0\BossesExtravaganza.deps.json
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\bin\Release\net9.0\BossesExtravaganza.dll
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\bin\Release\net9.0\BossesExtravaganza.pdb
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.csproj.AssemblyReference.cache
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.AssemblyInfoInputs.cache
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.AssemblyInfo.cs
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.csproj.CoreCompileInputs.cache
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.dll
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\refint\BossesExtravaganza.dll
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\BossesExtravaganza.pdb
+C:\Users\loren\Downloads\BossesExtravaganza_1.0.6_SPT_4.0.13_RELEASE_SOURCE_PACKAGE\BossesExtravaganza\obj\Release\net9.0\ref\BossesExtravaganza.dll

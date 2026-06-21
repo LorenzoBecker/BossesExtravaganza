@@ -1,0 +1,1 @@
+Bosses Extravaganza 1.0.6 release package. See CHANGELOG.md and README.md.

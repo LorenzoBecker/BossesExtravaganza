@@ -1,0 +1,196 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>BossesExtravaganza</AssemblyName>
+    <RootNamespace>AllBossesEverywhere</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\References\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="FastCloner">
+      <HintPath>..\References\FastCloner.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="JetBrains.Annotations">
+      <HintPath>..\References\JetBrains.Annotations.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Authorization">
+      <HintPath>..\References\Microsoft.AspNetCore.Authorization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Components.Forms">
+      <HintPath>..\References\Microsoft.AspNetCore.Components.Forms.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Components.Web">
+      <HintPath>..\References\Microsoft.AspNetCore.Components.Web.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Components">
+      <HintPath>..\References\Microsoft.AspNetCore.Components.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Metadata">
+      <HintPath>..\References\Microsoft.AspNetCore.Metadata.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration.Abstractions">
+      <HintPath>..\References\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration.Binder">
+      <HintPath>..\References\Microsoft.Extensions.Configuration.Binder.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration">
+      <HintPath>..\References\Microsoft.Extensions.Configuration.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+      <HintPath>..\References\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection">
+      <HintPath>..\References\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Diagnostics.Abstractions">
+      <HintPath>..\References\Microsoft.Extensions.Diagnostics.Abstractions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Diagnostics">
+      <HintPath>..\References\Microsoft.Extensions.Diagnostics.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Http">
+      <HintPath>..\References\Microsoft.Extensions.Http.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Localization.Abstractions">
+      <HintPath>..\References\Microsoft.Extensions.Localization.Abstractions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Localization">
+      <HintPath>..\References\Microsoft.Extensions.Localization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>..\References\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging">
+      <HintPath>..\References\Microsoft.Extensions.Logging.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options.ConfigurationExtensions">
+      <HintPath>..\References\Microsoft.Extensions.Options.ConfigurationExtensions.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options">
+      <HintPath>..\References\Microsoft.Extensions.Options.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Primitives">
+      <HintPath>..\References\Microsoft.Extensions.Primitives.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.JSInterop">
+      <HintPath>..\References\Microsoft.JSInterop.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb">
+      <HintPath>..\References\Mono.Cecil.Mdb.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb">
+      <HintPath>..\References\Mono.Cecil.Pdb.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks">
+      <HintPath>..\References\Mono.Cecil.Rocks.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\References\Mono.Cecil.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.Backports">
+      <HintPath>..\References\MonoMod.Backports.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.Core">
+      <HintPath>..\References\MonoMod.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.ILHelpers">
+      <HintPath>..\References\MonoMod.ILHelpers.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.Iced">
+      <HintPath>..\References\MonoMod.Iced.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\References\MonoMod.RuntimeDetour.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\References\MonoMod.Utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MudBlazor">
+      <HintPath>..\References\MudBlazor.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPT.Server.Linux">
+      <HintPath>..\References\SPT.Server.Linux.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPT.Server">
+      <HintPath>..\References\SPT.Server.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.Common">
+      <HintPath>..\References\SPTarkov.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.DI">
+      <HintPath>..\References\SPTarkov.DI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.Reflection">
+      <HintPath>..\References\SPTarkov.Reflection.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.Server.Assets">
+      <HintPath>..\References\SPTarkov.Server.Assets.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.Server.Core">
+      <HintPath>..\References\SPTarkov.Server.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SPTarkov.Server.Web">
+      <HintPath>..\References\SPTarkov.Server.Web.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SemanticVersioning">
+      <HintPath>..\References\SemanticVersioning.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.IO.Hashing">
+      <HintPath>..\References\System.IO.Hashing.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

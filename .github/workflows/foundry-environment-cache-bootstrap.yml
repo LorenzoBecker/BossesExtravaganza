@@ -79,22 +79,44 @@ jobs:
           dotnet restore probe/FoundryEnvironmentProbe.csproj --runtime win-x64 --locked-mode
           cmp probe/packages.lock.generated.json probe/packages.lock.json
 
-      - name: Freeze cache evidence
+      - name: Freeze and split cache evidence
         shell: bash
         run: |
           set -euo pipefail
           find nuget-cache -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > nuget-cache-files.sha256
           tar -czf foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz nuget-cache
           sha256sum foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz > foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz.sha256
+          split -b 300M -d -a 2 foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz foundry-nuget-cache.part-
+          sha256sum foundry-nuget-cache.part-* > foundry-nuget-cache.parts.sha256
+          test "$(find . -maxdepth 1 -name 'foundry-nuget-cache.part-*' -type f | wc -l)" -eq 3
           tar -czf foundry-environment-probe-source.tar.gz global.json probe
           sha256sum foundry-environment-probe-source.tar.gz > foundry-environment-probe-source.tar.gz.sha256
 
-      - name: Upload cache and probe evidence
+      - name: Upload cache part 00
         uses: actions/upload-artifact@v4
         with:
-          name: foundry-environment-cache-10.0.301-avalonia-12.1.0
+          name: foundry-environment-cache-part-00
+          path: foundry-nuget-cache.part-00
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload cache part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-environment-cache-part-01
+          path: foundry-nuget-cache.part-01
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload cache part 02 and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-environment-cache-part-02-evidence
           path: |
-            foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz
+            foundry-nuget-cache.part-02
+            foundry-nuget-cache.parts.sha256
             foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz.sha256
             foundry-environment-probe-source.tar.gz
             foundry-environment-probe-source.tar.gz.sha256

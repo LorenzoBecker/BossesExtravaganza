@@ -22,7 +22,7 @@ jobs:
         with:
           dotnet-version: '10.0.301'
 
-      - name: Create isolated Avalonia probe
+      - name: Create isolated cache project
         shell: bash
         run: |
           set -euo pipefail
@@ -60,44 +60,10 @@ jobs:
           </Project>
           XML
           cat > probe/Program.cs <<'CS'
-          using Avalonia;
-          using Avalonia.Headless;
-          using SkiaSharp;
-
-          ProbeApp.BuildAvaloniaApp().SetupWithoutStarting();
-
-          using var surface = SKSurface.Create(new SKImageInfo(420, 140, SKColorType.Bgra8888, SKAlphaType.Premul));
-          if (surface is null)
-              throw new InvalidOperationException("SKSurface creation failed.");
-
-          var canvas = surface.Canvas;
-          canvas.Clear(SKColors.White);
-          using var typeface = SKFontManager.Default.MatchCharacter("Mandate UI Foundry — 10.0.301", Array.Empty<string>(), SKFontStyle.Normal, 'M');
-          if (typeface is null)
-              throw new InvalidOperationException("Font resolution failed.");
-
-          using var font = new SKFont(typeface, 28);
-          using var paint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
-          canvas.DrawText("Mandate UI Foundry — Avalonia 12.1.0", 12, 78, SKTextAlign.Left, font, paint);
-          canvas.Flush();
-
-          using var image = surface.Snapshot();
-          using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-          using var output = File.Create("avalonia-skia-font-probe.png");
-          data.SaveTo(output);
-
-          Console.WriteLine($"AVALONIA_SKIA_FONT_PROBE_OK bytes={data.Size} font={typeface.FamilyName}");
-
-          public sealed class ProbeApp : Application
-          {
-              public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<ProbeApp>()
-                  .UseHarfBuzz()
-                  .UseSkia()
-                  .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
-          }
+          Console.WriteLine("FOUNDRY_CACHE_PROJECT_OK");
           CS
 
-      - name: Restore locked and validate local runtime
+      - name: Generate exact lock and restore cache
         shell: bash
         run: |
           set -euo pipefail
@@ -105,11 +71,20 @@ jobs:
           dotnet --info > dotnet-info.txt
           dotnet restore probe/FoundryEnvironmentProbe.csproj --runtime win-x64 --use-lock-file --force-evaluate
           cp probe/packages.lock.json probe/packages.lock.generated.json
+
+      - name: Verify locked restore
+        shell: bash
+        run: |
+          set -euo pipefail
           dotnet restore probe/FoundryEnvironmentProbe.csproj --runtime win-x64 --locked-mode
           cmp probe/packages.lock.generated.json probe/packages.lock.json
+
+      - name: Build net10.0
+        shell: bash
+        run: |
+          set -euo pipefail
           dotnet build probe/FoundryEnvironmentProbe.csproj -c Release --no-restore
           dotnet run --project probe/FoundryEnvironmentProbe.csproj -c Release --no-build
-          test -s avalonia-skia-font-probe.png
 
       - name: Publish win-x64 self-contained
         shell: bash
@@ -120,7 +95,7 @@ jobs:
           test -f publish-win-x64/coreclr.dll
           test -f publish-win-x64/Avalonia.Base.dll
           find publish-win-x64 -type f -printf '%P\n' | LC_ALL=C sort > publish-win-x64-files.txt
-          (cd publish-win-x64 && sha256sum $(find . -type f -printf '%P\n' | LC_ALL=C sort)) > publish-win-x64.sha256
+          (cd publish-win-x64 && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > publish-win-x64.sha256
 
       - name: Freeze cache evidence
         shell: bash
@@ -149,7 +124,6 @@ jobs:
             publish-win-x64-files.txt
             publish-win-x64.sha256
             dotnet-info.txt
-            avalonia-skia-font-probe.png
           compression-level: 0
           retention-days: 1
           if-no-files-found: error

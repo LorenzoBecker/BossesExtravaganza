@@ -79,17 +79,6 @@ jobs:
           dotnet restore probe/FoundryEnvironmentProbe.csproj --runtime win-x64 --locked-mode
           cmp probe/packages.lock.generated.json probe/packages.lock.json
 
-      - name: Publish win-x64 self-contained
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet publish probe/FoundryEnvironmentProbe.csproj -c Release -r win-x64 --self-contained true --locked-mode --no-restore -o publish-win-x64
-          test -f publish-win-x64/FoundryEnvironmentProbe.exe
-          test -f publish-win-x64/coreclr.dll
-          test -f publish-win-x64/Avalonia.Base.dll
-          find publish-win-x64 -type f -printf '%P\n' | LC_ALL=C sort > publish-win-x64-files.txt
-          (cd publish-win-x64 && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > publish-win-x64.sha256
-
       - name: Freeze cache evidence
         shell: bash
         run: |
@@ -99,8 +88,6 @@ jobs:
           sha256sum foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz > foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz.sha256
           tar -czf foundry-environment-probe-source.tar.gz global.json probe
           sha256sum foundry-environment-probe-source.tar.gz > foundry-environment-probe-source.tar.gz.sha256
-          tar -czf foundry-environment-probe-publish-win-x64.tar.gz publish-win-x64
-          sha256sum foundry-environment-probe-publish-win-x64.tar.gz > foundry-environment-probe-publish-win-x64.tar.gz.sha256
 
       - name: Upload cache and probe evidence
         uses: actions/upload-artifact@v4
@@ -111,11 +98,7 @@ jobs:
             foundry-nuget-cache-net10-avalonia12.1.0-win-x64.tar.gz.sha256
             foundry-environment-probe-source.tar.gz
             foundry-environment-probe-source.tar.gz.sha256
-            foundry-environment-probe-publish-win-x64.tar.gz
-            foundry-environment-probe-publish-win-x64.tar.gz.sha256
             nuget-cache-files.sha256
-            publish-win-x64-files.txt
-            publish-win-x64.sha256
             dotnet-info.txt
           compression-level: 0
           retention-days: 1

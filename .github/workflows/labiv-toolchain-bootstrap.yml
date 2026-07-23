@@ -35,7 +35,7 @@ jobs:
           "$SDK_DIR/dotnet" --info | tee "$ROOT/dotnet-info.txt"
           "$SDK_DIR/dotnet" "$SDK_DIR/sdk/8.0.412/Roslyn/bincore/csc.dll" -version | tee "$ROOT/roslyn-version.txt"
 
-      - name: Install ILSpy and dnlib
+      - name: Acquire exact ILSpy and dnlib packages
         shell: bash
         run: |
           set -euo pipefail
@@ -43,9 +43,39 @@ jobs:
           SDK_DIR="$ROOT/dotnet-sdk-8.0.412-linux-x64"
           export DOTNET_ROOT="$SDK_DIR"
           export PATH="$SDK_DIR:$PATH"
-          mkdir -p "$ROOT/tools/ilspycmd" "$ROOT/tools/dnlib"
-          dotnet tool install ilspycmd --version 10.1.1.8388 --tool-path "$ROOT/tools/ilspycmd"
+          mkdir -p "$ROOT/tools/ilspycmd/package" "$ROOT/tools/dnlib"
+
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$ROOT/ilspycmd-index.json" \
+            https://api.nuget.org/v3-flatcontainer/ilspycmd/index.json
+          python3 - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("$RUNNER_TEMP/labiv/ilspycmd-index.json")
+          versions = json.loads(p.read_text(encoding="utf-8"))["versions"]
+          target = "10.1.1.8388"
+          if target not in versions:
+              raise SystemExit(f"ILSpy version missing: {target}; latest={versions[-10:]}")
+          print(f"ILSPY_VERSION_QUALIFIED={target}")
+          PY
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$ROOT/ilspycmd.10.1.1.8388.nupkg" \
+            https://api.nuget.org/v3-flatcontainer/ilspycmd/10.1.1.8388/ilspycmd.10.1.1.8388.nupkg
+          unzip -q "$ROOT/ilspycmd.10.1.1.8388.nupkg" -d "$ROOT/tools/ilspycmd/package"
+          ILSPY_DLL="$(find "$ROOT/tools/ilspycmd/package" -type f -name ilspycmd.dll | head -n1)"
+          test -n "$ILSPY_DLL"
+          cat > "$ROOT/tools/ilspycmd/ilspycmd" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          ROOT="$(cd "$HERE/../.." && pwd)"
+          SDK="$ROOT/dotnet-sdk-8.0.412-linux-x64"
+          DLL="$(find "$HERE/package" -type f -name ilspycmd.dll | head -n1)"
+          exec "$SDK/dotnet" "$DLL" "$@"
+          EOF
+          chmod +x "$ROOT/tools/ilspycmd/ilspycmd"
           "$ROOT/tools/ilspycmd/ilspycmd" --version | tee "$ROOT/ilspycmd-version.txt"
+          sha256sum "$ROOT/ilspycmd.10.1.1.8388.nupkg" > "$ROOT/ilspycmd-nupkg.sha256"
+
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$ROOT/dnlib.4.5.0.nupkg" \
             https://api.nuget.org/v3-flatcontainer/dnlib/4.5.0/dnlib.4.5.0.nupkg
@@ -86,9 +116,6 @@ jobs:
         run: |
           set -euo pipefail
           ROOT="$RUNNER_TEMP/labiv"
-          SDK_DIR="$ROOT/dotnet-sdk-8.0.412-linux-x64"
-          export DOTNET_ROOT="$SDK_DIR"
-          export PATH="$SDK_DIR:$PATH"
           mkdir -p "$ROOT/decompiled"
           "$ROOT/tools/ilspycmd/ilspycmd" -p -o "$ROOT/decompiled" "$ROOT/smoke/bin/Release/net8.0/LabIVSmoke.dll"
           grep -R "MAINLAB_TOOLCHAIN_COMPILE_EXECUTE_PASS" "$ROOT/decompiled" | tee "$ROOT/decompile-smoke.txt"
@@ -103,6 +130,7 @@ jobs:
           mv "$ROOT/dotnet-sdk-8.0.412-linux-x64" "$HANDOFF/"
           mv "$ROOT/tools" "$HANDOFF/"
           cp "$ROOT/dnlib.4.5.0.nupkg" "$HANDOFF/"
+          cp "$ROOT/ilspycmd.10.1.1.8388.nupkg" "$HANDOFF/"
           cp "$ROOT"/*.txt "$HANDOFF/" 2>/dev/null || true
           cat > "$HANDOFF/RESTORE_TOOLCHAIN.sh" <<'EOF'
           #!/usr/bin/env bash

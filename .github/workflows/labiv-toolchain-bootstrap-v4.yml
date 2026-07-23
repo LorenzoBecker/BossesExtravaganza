@@ -1,0 +1,160 @@
+name: Lab IV Toolchain Bootstrap V4
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: SDK8 exact
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; S="$R/dotnet-sdk-8.0.412-linux-x64"; mkdir -p "$S"
+          curl -fL --retry 5 --retry-all-errors -o "$R/sdk8.tgz" https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.412/dotnet-sdk-8.0.412-linux-x64.tar.gz
+          echo "A4F783BE6657256726F0616A1C48534A43838B5FBF390256F3ED95DB0850B3A9  $R/sdk8.tgz" | sha256sum -c --strict
+          tar -xzf "$R/sdk8.tgz" -C "$S"
+          test "$($S/dotnet --version)" = 8.0.412
+          test "$(sha256sum "$S/dotnet"|awk '{print toupper($1)}')" = 16248F01CB85154458B2CBBF8CE78A160E5E5E3F0BEFA6C34023DCB07BA1E2F6
+          test "$(sha256sum "$S/sdk/8.0.412/Roslyn/bincore/csc.dll"|awk '{print toupper($1)}')" = 0593BFD4B56795C417429717F432DD28C5CB0A17B97127453DE303B8D3779093
+          "$S/dotnet" --info | tee "$R/sdk8-info.txt"
+          "$S/dotnet" "$S/sdk/8.0.412/Roslyn/bincore/csc.dll" -version | tee "$R/roslyn.txt"
+
+      - name: SDK10 isolated for ILSpy
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; S="$R/dotnet-sdk-10.0.302-ilspy-only"; mkdir -p "$S"
+          curl -fL --retry 5 --retry-all-errors -o "$R/releases10.json" https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json
+          python3 - <<'PY'
+          import json,os,pathlib,shlex
+          r=pathlib.Path(os.environ['RUNNER_TEMP'])/'labiv-v4'; d=json.loads((r/'releases10.json').read_text())
+          rel=next(x for x in d['releases'] if x['release-version']=='10.0.10'); ss=rel.get('sdks') or [rel['sdk']]
+          s=next(x for x in ss if x['version']=='10.0.302'); f=next(x for x in s['files'] if x.get('rid')=='linux-x64' and x['name'].endswith('.tar.gz'))
+          (r/'sdk10.env').write_text('U='+shlex.quote(f['url'])+'\nH='+shlex.quote(f['hash'])+'\n')
+          PY
+          source "$R/sdk10.env"; curl -fL --retry 5 --retry-all-errors -o "$R/sdk10.tgz" "$U"
+          echo "$H  $R/sdk10.tgz" | sha512sum -c --strict; tar -xzf "$R/sdk10.tgz" -C "$S"
+          test "$($S/dotnet --version)" = 10.0.302
+
+      - name: ILSpy exact and dnlib exact
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; S10="$R/dotnet-sdk-10.0.302-ilspy-only"
+          export DOTNET_ROOT="$S10" DOTNET_CLI_HOME="$R/home10" NUGET_PACKAGES="$R/nuget10"
+          mkdir -p "$R/tools/ilspycmd/install" "$R/tools/dnlib" "$R/local-feed"
+          "$S10/dotnet" tool install ilspycmd --version 10.1.1.8388 --tool-path "$R/tools/ilspycmd/install"
+          D="$(find "$R/tools/ilspycmd/install/.store" -type f -name ilspycmd.dll|head -n1)"; test -n "$D"
+          cat > "$R/tools/ilspycmd/ilspycmd" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          H="$(cd "$(dirname "${BASH_SOURCE[0]}")"&&pwd)"; R="$(cd "$H/../.."&&pwd)"
+          D="$(find "$H/install/.store" -type f -name ilspycmd.dll|head -n1)"
+          exec "$R/dotnet-sdk-10.0.302-ilspy-only/dotnet" "$D" "$@"
+          EOF
+          chmod +x "$R/tools/ilspycmd/ilspycmd"; "$R/tools/ilspycmd/ilspycmd" --version | tee "$R/ilspy.txt"
+          grep -F 10.1.1.8388 "$R/ilspy.txt"
+          curl -fL --retry 5 --retry-all-errors -o "$R/dnlib.4.5.0.nupkg" https://api.nuget.org/v3-flatcontainer/dnlib/4.5.0/dnlib.4.5.0.nupkg
+          unzip -q "$R/dnlib.4.5.0.nupkg" -d "$R/tools/dnlib"; test -f "$R/tools/dnlib/lib/netstandard2.0/dnlib.dll"
+          cp "$R/dnlib.4.5.0.nupkg" "$R/local-feed/"
+
+      - name: Restore build execute with SDK8
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; S="$R/dotnet-sdk-8.0.412-linux-x64"
+          export DOTNET_ROOT="$S" DOTNET_CLI_HOME="$R/home8" NUGET_PACKAGES="$R/nuget8"
+          mkdir -p "$R/smoke"
+          cat > "$R/smoke/Smoke.csproj" <<'EOF'
+          <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><RestoreSources></RestoreSources><Deterministic>true</Deterministic></PropertyGroup></Project>
+          EOF
+          echo 'Console.WriteLine("MAINLAB_TOOLCHAIN_COMPILE_EXECUTE_PASS");' > "$R/smoke/Program.cs"
+          "$S/dotnet" restore "$R/smoke/Smoke.csproj" --ignore-failed-sources | tee "$R/restore.txt"
+          "$S/dotnet" build "$R/smoke/Smoke.csproj" -c Release --no-restore | tee "$R/build.txt"
+          "$S/dotnet" "$R/smoke/bin/Release/net8.0/Smoke.dll" | tee "$R/execute.txt"
+          grep -Fx MAINLAB_TOOLCHAIN_COMPILE_EXECUTE_PASS "$R/execute.txt"
+
+      - name: ILSpy decompile proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; mkdir -p "$R/decompiled"
+          "$R/tools/ilspycmd/ilspycmd" -p -o "$R/decompiled" "$R/smoke/bin/Release/net8.0/Smoke.dll"
+          grep -R MAINLAB_TOOLCHAIN_COMPILE_EXECUTE_PASS "$R/decompiled" | tee "$R/decompile.txt"
+
+      - name: dnlib local restore build and CIL read
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; S="$R/dotnet-sdk-8.0.412-linux-x64"
+          export DOTNET_ROOT="$S" DOTNET_CLI_HOME="$R/home8" NUGET_PACKAGES="$R/nuget8"
+          mkdir -p "$R/cil"
+          cat > "$R/cil/NuGet.Config" <<EOF
+          <?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear/><add key="offline" value="$R/local-feed"/></packageSources></configuration>
+          EOF
+          cat > "$R/cil/Cil.csproj" <<'EOF'
+          <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include="dnlib" Version="4.5.0"/></ItemGroup></Project>
+          EOF
+          cat > "$R/cil/Program.cs" <<'EOF'
+          using dnlib.DotNet;
+          var m = ModuleDefMD.Load(args[0]);
+          Console.WriteLine($"MAINLAB_DNLIB_CIL_READ_PASS types={m.Types.Count}");
+          m.Dispose();
+          EOF
+          "$S/dotnet" restore "$R/cil/Cil.csproj" --configfile "$R/cil/NuGet.Config" | tee "$R/dnlib-restore.txt"
+          "$S/dotnet" build "$R/cil/Cil.csproj" -c Release --no-restore | tee "$R/dnlib-build.txt"
+          "$S/dotnet" "$R/cil/bin/Release/net8.0/Cil.dll" "$R/smoke/bin/Release/net8.0/Smoke.dll" | tee "$R/dnlib-read.txt"
+          grep -F MAINLAB_DNLIB_CIL_READ_PASS "$R/dnlib-read.txt"
+
+      - name: Package handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/labiv-v4"; H="$R/handoff"; mkdir -p "$H"
+          mv "$R/dotnet-sdk-8.0.412-linux-x64" "$H/"; mv "$R/dotnet-sdk-10.0.302-ilspy-only" "$H/"; mv "$R/tools" "$H/"
+          cp "$R/dnlib.4.5.0.nupkg" "$H/"; cp "$R"/*.txt "$H/" 2>/dev/null || true
+          cat > "$H/RESTORE_TOOLCHAIN.sh" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          R="$(cd "$(dirname "${BASH_SOURCE[0]}")"&&pwd)"; S8="$R/dotnet-sdk-8.0.412-linux-x64"; S10="$R/dotnet-sdk-10.0.302-ilspy-only"
+          test "$($S8/dotnet --version)" = 8.0.412
+          test "$(sha256sum "$S8/dotnet"|awk '{print toupper($1)}')" = 16248F01CB85154458B2CBBF8CE78A160E5E5E3F0BEFA6C34023DCB07BA1E2F6
+          test "$(sha256sum "$S8/sdk/8.0.412/Roslyn/bincore/csc.dll"|awk '{print toupper($1)}')" = 0593BFD4B56795C417429717F432DD28C5CB0A17B97127453DE303B8D3779093
+          test "$($S10/dotnet --version)" = 10.0.302; "$R/tools/ilspycmd/ilspycmd" --version|grep -F 10.1.1.8388
+          test -f "$R/tools/dnlib/lib/netstandard2.0/dnlib.dll"
+          cat > "$R/toolchain.env" <<ENV
+          export DOTNET_ROOT='$S8'
+          export EE_DOTNET='$S8/dotnet'
+          export EE_CSC_DLL='$S8/sdk/8.0.412/Roslyn/bincore/csc.dll'
+          export EE_MSBUILD_DLL='$S8/sdk/8.0.412/MSBuild.dll'
+          export EE_ILSPYCMD='$R/tools/ilspycmd/ilspycmd'
+          export EE_DNLIB_DLL='$R/tools/dnlib/lib/netstandard2.0/dnlib.dll'
+          export DOTNET_CLI_HOME='$R/dotnet-home'
+          export NUGET_PACKAGES='$R/nuget-packages'
+          export PATH='$S8:$R/tools/ilspycmd':\$PATH
+          ENV
+          echo MAINLAB_ENVIRONMENT_READY
+          EOF
+          chmod +x "$H/RESTORE_TOOLCHAIN.sh"; find "$H" -type f -print0|sort -z|xargs -0 sha256sum > "$H/SHA256SUMS.txt"
+          A="$GITHUB_WORKSPACE/EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz"
+          tar --sort=name --mtime='UTC 2026-07-24 00:00:00' --owner=0 --group=0 --numeric-owner -czf "$A" -C "$R" handoff
+          sha256sum "$A" | tee "$A.sha256"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: EndlessExpanse-LabIV-Toolchain-V4
+          path: |
+            EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz
+            EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0

@@ -35,16 +35,12 @@ jobs:
           "$SDK_DIR/dotnet" --info | tee "$ROOT/dotnet-info.txt"
           "$SDK_DIR/dotnet" "$SDK_DIR/sdk/8.0.412/Roslyn/bincore/csc.dll" -version | tee "$ROOT/roslyn-version.txt"
 
-      - name: Acquire exact ILSpy and dnlib packages
+      - name: Acquire exact ILSpy package
         shell: bash
         run: |
           set -euo pipefail
           ROOT="$RUNNER_TEMP/labiv"
-          SDK_DIR="$ROOT/dotnet-sdk-8.0.412-linux-x64"
-          export DOTNET_ROOT="$SDK_DIR"
-          export PATH="$SDK_DIR:$PATH"
-          mkdir -p "$ROOT/tools/ilspycmd/package" "$ROOT/tools/dnlib"
-
+          mkdir -p "$ROOT/tools/ilspycmd/package"
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$ROOT/ilspycmd-index.json" \
             https://api.nuget.org/v3-flatcontainer/ilspycmd/index.json
@@ -62,26 +58,72 @@ jobs:
             https://api.nuget.org/v3-flatcontainer/ilspycmd/10.1.1.8388/ilspycmd.10.1.1.8388.nupkg
           unzip -q "$ROOT/ilspycmd.10.1.1.8388.nupkg" -d "$ROOT/tools/ilspycmd/package"
           ILSPY_DLL="$(find "$ROOT/tools/ilspycmd/package" -type f -name ilspycmd.dll | head -n1)"
+          ILSPY_RUNTIMECONFIG="$(find "$ROOT/tools/ilspycmd/package" -type f -name ilspycmd.runtimeconfig.json | head -n1)"
           test -n "$ILSPY_DLL"
+          test -n "$ILSPY_RUNTIMECONFIG"
+          cp "$ILSPY_RUNTIMECONFIG" "$ROOT/ilspycmd-runtimeconfig.json"
+          cat "$ROOT/ilspycmd-runtimeconfig.json"
+          sha256sum "$ROOT/ilspycmd.10.1.1.8388.nupkg" > "$ROOT/ilspycmd-nupkg.sha256"
+
+      - name: Acquire isolated .NET runtime for ILSpy
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/labiv"
+          RUNTIME_DIR="$ROOT/dotnet-ilspy-runtime"
+          mkdir -p "$RUNTIME_DIR"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$ROOT/dotnet-10-releases.json" \
+            https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json
+          python3 - <<'PY'
+          import json, os, pathlib, shlex
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "labiv"
+          data = json.loads((root / "dotnet-10-releases.json").read_text(encoding="utf-8"))
+          target = "10.0.10"
+          release = next(r for r in data["releases"] if r["release-version"] == target)
+          file = next(f for f in release["runtime"]["files"] if f.get("rid") == "linux-x64" and f["name"].endswith(".tar.gz"))
+          env = [
+              f"RUNTIME_VERSION={shlex.quote(target)}",
+              f"RUNTIME_URL={shlex.quote(file['url'])}",
+              f"RUNTIME_SHA512={shlex.quote(file['hash'])}",
+          ]
+          (root / "runtime10.env").write_text("\n".join(env) + "\n", encoding="utf-8")
+          print("\n".join(env))
+          PY
+          source "$ROOT/runtime10.env"
+          RUNTIME_ARCHIVE="$ROOT/dotnet-runtime-$RUNTIME_VERSION-linux-x64.tar.gz"
+          curl --fail --location --retry 5 --retry-all-errors --output "$RUNTIME_ARCHIVE" "$RUNTIME_URL"
+          echo "$RUNTIME_SHA512  $RUNTIME_ARCHIVE" | sha512sum --check --strict
+          tar -xzf "$RUNTIME_ARCHIVE" -C "$RUNTIME_DIR"
+          test -x "$RUNTIME_DIR/dotnet"
+          "$RUNTIME_DIR/dotnet" --info | tee "$ROOT/dotnet-ilspy-runtime-info.txt"
+
           cat > "$ROOT/tools/ilspycmd/ilspycmd" <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
           HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
           ROOT="$(cd "$HERE/../.." && pwd)"
-          SDK="$ROOT/dotnet-sdk-8.0.412-linux-x64"
+          RUNTIME="$ROOT/dotnet-ilspy-runtime"
           DLL="$(find "$HERE/package" -type f -name ilspycmd.dll | head -n1)"
-          exec "$SDK/dotnet" "$DLL" "$@"
+          exec "$RUNTIME/dotnet" "$DLL" "$@"
           EOF
           chmod +x "$ROOT/tools/ilspycmd/ilspycmd"
           "$ROOT/tools/ilspycmd/ilspycmd" --version | tee "$ROOT/ilspycmd-version.txt"
-          sha256sum "$ROOT/ilspycmd.10.1.1.8388.nupkg" > "$ROOT/ilspycmd-nupkg.sha256"
 
+      - name: Acquire dnlib 4.5.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/labiv"
+          mkdir -p "$ROOT/tools/dnlib"
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$ROOT/dnlib.4.5.0.nupkg" \
             https://api.nuget.org/v3-flatcontainer/dnlib/4.5.0/dnlib.4.5.0.nupkg
           unzip -q "$ROOT/dnlib.4.5.0.nupkg" -d "$ROOT/tools/dnlib"
-          test -f "$ROOT/tools/dnlib/lib/netstandard2.0/dnlib.dll"
+          DNLIB_DLL="$(find "$ROOT/tools/dnlib/lib" -type f -path '*/netstandard2.0/dnlib.dll' | head -n1)"
+          test -n "$DNLIB_DLL"
           sha256sum "$ROOT/dnlib.4.5.0.nupkg" > "$ROOT/dnlib-nupkg.sha256"
+          sha256sum "$DNLIB_DLL" > "$ROOT/dnlib-dll.sha256"
 
       - name: Compile and execute smoke
         shell: bash
@@ -91,6 +133,8 @@ jobs:
           SDK_DIR="$ROOT/dotnet-sdk-8.0.412-linux-x64"
           export DOTNET_ROOT="$SDK_DIR"
           export PATH="$SDK_DIR:$PATH"
+          export DOTNET_CLI_HOME="$ROOT/dotnet-home"
+          export NUGET_PACKAGES="$ROOT/nuget-packages"
           mkdir -p "$ROOT/smoke"
           cat > "$ROOT/smoke/LabIVSmoke.csproj" <<'EOF'
           <Project Sdk="Microsoft.NET.Sdk">
@@ -128,10 +172,12 @@ jobs:
           HANDOFF="$ROOT/handoff"
           mkdir -p "$HANDOFF"
           mv "$ROOT/dotnet-sdk-8.0.412-linux-x64" "$HANDOFF/"
+          mv "$ROOT/dotnet-ilspy-runtime" "$HANDOFF/"
           mv "$ROOT/tools" "$HANDOFF/"
           cp "$ROOT/dnlib.4.5.0.nupkg" "$HANDOFF/"
           cp "$ROOT/ilspycmd.10.1.1.8388.nupkg" "$HANDOFF/"
           cp "$ROOT"/*.txt "$HANDOFF/" 2>/dev/null || true
+          cp "$ROOT/ilspycmd-runtimeconfig.json" "$HANDOFF/"
           cat > "$HANDOFF/RESTORE_TOOLCHAIN.sh" <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
@@ -147,6 +193,8 @@ jobs:
           export EE_CSC_DLL='$SDK/sdk/8.0.412/Roslyn/bincore/csc.dll'
           export EE_ILSPYCMD='$ROOT/tools/ilspycmd/ilspycmd'
           export EE_DNLIB_DLL='$ROOT/tools/dnlib/lib/netstandard2.0/dnlib.dll'
+          export DOTNET_CLI_HOME='$ROOT/dotnet-home'
+          export NUGET_PACKAGES='$ROOT/nuget-packages'
           export PATH='$SDK:$ROOT/tools/ilspycmd':\$PATH
           ENV
           "$SDK/dotnet" --version

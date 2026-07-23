@@ -49,8 +49,8 @@ jobs:
             --output "$ROOT/ilspycmd-index.json" \
             https://api.nuget.org/v3-flatcontainer/ilspycmd/index.json
           python3 - <<'PY'
-          import json, pathlib
-          p = pathlib.Path("$RUNNER_TEMP/labiv/ilspycmd-index.json")
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["RUNNER_TEMP"]) / "labiv" / "ilspycmd-index.json"
           versions = json.loads(p.read_text(encoding="utf-8"))["versions"]
           target = "10.1.1.8388"
           if target not in versions:

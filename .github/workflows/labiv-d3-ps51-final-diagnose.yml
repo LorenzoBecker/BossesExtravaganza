@@ -1,0 +1,86 @@
+name: Lab IV D3 PowerShell 5.1 Final Diagnose
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-final:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract exact final scripts and diagnose
+        id: diagnose
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $workflow = Get-Content '.github/workflows/labiv-d3-ps51-final.yml' -Raw -Encoding UTF8
+          $installMatch = [regex]::Match($workflow, '\$install = ''([^'']+)''', [Text.RegularExpressions.RegexOptions]::Singleline)
+          $rollbackMatch = [regex]::Match($workflow, '\$rollback = ''([^'']+)''', [Text.RegularExpressions.RegexOptions]::Singleline)
+          if (-not $installMatch.Success -or -not $rollbackMatch.Success) { throw 'Final Base64 payloads not found' }
+
+          $installPath = "$env:RUNNER_TEMP\Install-EndlessExpanse-D3.ps1"
+          $rollbackPath = "$env:RUNNER_TEMP\Rollback-EndlessExpanse-D2.ps1"
+          [IO.File]::WriteAllBytes($installPath, [Convert]::FromBase64String($installMatch.Groups[1].Value))
+          [IO.File]::WriteAllBytes($rollbackPath, [Convert]::FromBase64String($rollbackMatch.Groups[1].Value))
+
+          $expected = @{
+            $installPath = 'B4C3C033FDF51B944380F372E974066D8268F1CC0F3804BD233A6274EFDF1E3F'
+            $rollbackPath = '9F12C25BAD647B7AB22D675015DEF3B39AC936DE7743B9CF745ED2723A84254E'
+          }
+          $results = @()
+          $totalErrors = 0
+          foreach ($path in @($installPath, $rollbackPath)) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+            $actualHash = (Get-FileHash $path -Algorithm SHA256).Hash
+            $items = @($errors | ForEach-Object {
+              [pscustomobject]@{
+                Message = $_.Message
+                ErrorId = $_.ErrorId
+                StartLine = $_.Extent.StartLineNumber
+                StartColumn = $_.Extent.StartColumnNumber
+                EndLine = $_.Extent.EndLineNumber
+                EndColumn = $_.Extent.EndColumnNumber
+                Text = $_.Extent.Text
+              }
+            })
+            $totalErrors += $items.Count
+            $results += [pscustomobject]@{
+              File = [IO.Path]::GetFileName($path)
+              Sha256 = $actualHash
+              HashMatches = ($actualHash -eq $expected[$path])
+              TokenCount = $tokens.Count
+              ErrorCount = $items.Count
+              Errors = $items
+            }
+          }
+          $report = [pscustomobject]@{
+            PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+            TotalErrors = $totalErrors
+            Results = $results
+          }
+          $report | ConvertTo-Json -Depth 8 | Set-Content "$env:RUNNER_TEMP\ps51-final-diagnose.json" -Encoding UTF8
+          $report | ConvertTo-Json -Depth 8
+
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) { throw 'Not Windows PowerShell 5.1' }
+          if ($results.Where({-not $_.HashMatches}).Count -ne 0) { throw 'Final script hash mismatch' }
+          if ($totalErrors -ne 0) { throw "Final parser errors: $totalErrors" }
+          Write-Host 'POWERSHELL_5_1_PARSE_PASS'
+
+      - name: Upload final diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LabIV-D3-PS51-Final-Diagnostic
+          path: ${{ runner.temp }}\ps51-final-diagnose.json
+          if-no-files-found: error
+          retention-days: 1

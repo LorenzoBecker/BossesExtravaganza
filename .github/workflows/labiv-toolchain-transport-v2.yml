@@ -1,0 +1,102 @@
+name: Lab IV Toolchain Transport V2
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transport-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Acquire and package toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/labiv-transport-v2"
+          HANDOFF="$ROOT/handoff"
+          SDK8="$HANDOFF/dotnet-sdk-8.0.412-linux-x64"
+          SDK10="$HANDOFF/dotnet-sdk-10.0.302-ilspy-only"
+          mkdir -p "$SDK8" "$SDK10" "$HANDOFF/tools/ilspycmd/install" "$HANDOFF/tools/dnlib"
+
+          curl -fL --retry 5 --retry-all-errors -o "$ROOT/sdk8.tgz" https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.412/dotnet-sdk-8.0.412-linux-x64.tar.gz
+          echo "A4F783BE6657256726F0616A1C48534A43838B5FBF390256F3ED95DB0850B3A9  $ROOT/sdk8.tgz" | sha256sum -c --strict
+          tar -xzf "$ROOT/sdk8.tgz" -C "$SDK8"
+          test "$($SDK8/dotnet --version)" = 8.0.412
+          test "$(sha256sum "$SDK8/dotnet"|awk '{print toupper($1)}')" = 16248F01CB85154458B2CBBF8CE78A160E5E5E3F0BEFA6C34023DCB07BA1E2F6
+          test "$(sha256sum "$SDK8/sdk/8.0.412/Roslyn/bincore/csc.dll"|awk '{print toupper($1)}')" = 0593BFD4B56795C417429717F432DD28C5CB0A17B97127453DE303B8D3779093
+
+          curl -fL --retry 5 --retry-all-errors -o "$ROOT/releases10.json" https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json
+          python3 - <<'PY'
+          import json,os,pathlib,shlex
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'labiv-transport-v2'; data=json.loads((root/'releases10.json').read_text())
+          rel=next(x for x in data['releases'] if x['release-version']=='10.0.10'); sdks=rel.get('sdks') or [rel['sdk']]
+          sdk=next(x for x in sdks if x['version']=='10.0.302'); f=next(x for x in sdk['files'] if x.get('rid')=='linux-x64' and x['name'].endswith('.tar.gz'))
+          (root/'sdk10.env').write_text('SDK10_URL='+shlex.quote(f['url'])+'\nSDK10_SHA512='+shlex.quote(f['hash'])+'\n')
+          PY
+          source "$ROOT/sdk10.env"
+          curl -fL --retry 5 --retry-all-errors -o "$ROOT/sdk10.tgz" "$SDK10_URL"
+          echo "$SDK10_SHA512  $ROOT/sdk10.tgz" | sha512sum -c --strict
+          tar -xzf "$ROOT/sdk10.tgz" -C "$SDK10"
+          test "$($SDK10/dotnet --version)" = 10.0.302
+
+          export DOTNET_ROOT="$SDK10" DOTNET_CLI_HOME="$ROOT/home10" NUGET_PACKAGES="$ROOT/nuget10"
+          "$SDK10/dotnet" tool install ilspycmd --version 10.1.1.8388 --tool-path "$HANDOFF/tools/ilspycmd/install"
+          ILSPY_DLL="$(find "$HANDOFF/tools/ilspycmd/install/.store" -type f -name ilspycmd.dll|head -n1)"; test -n "$ILSPY_DLL"
+          cat > "$HANDOFF/tools/ilspycmd/ilspycmd" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")"&&pwd)"; ROOT="$(cd "$HERE/../.."&&pwd)"
+          DLL="$(find "$HERE/install/.store" -type f -name ilspycmd.dll|head -n1)"
+          exec "$ROOT/dotnet-sdk-10.0.302-ilspy-only/dotnet" "$DLL" "$@"
+          EOF
+          chmod +x "$HANDOFF/tools/ilspycmd/ilspycmd"
+          "$HANDOFF/tools/ilspycmd/ilspycmd" --version | grep -F 10.1.1.8388
+
+          curl -fL --retry 5 --retry-all-errors -o "$HANDOFF/dnlib.4.5.0.nupkg" https://api.nuget.org/v3-flatcontainer/dnlib/4.5.0/dnlib.4.5.0.nupkg
+          unzip -q "$HANDOFF/dnlib.4.5.0.nupkg" -d "$HANDOFF/tools/dnlib"
+          test -f "$HANDOFF/tools/dnlib/lib/netstandard2.0/dnlib.dll"
+
+          cat > "$HANDOFF/RESTORE_TOOLCHAIN.sh" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"&&pwd)"; SDK8="$ROOT/dotnet-sdk-8.0.412-linux-x64"; SDK10="$ROOT/dotnet-sdk-10.0.302-ilspy-only"
+          test "$($SDK8/dotnet --version)" = 8.0.412
+          test "$(sha256sum "$SDK8/dotnet"|awk '{print toupper($1)}')" = 16248F01CB85154458B2CBBF8CE78A160E5E5E3F0BEFA6C34023DCB07BA1E2F6
+          test "$(sha256sum "$SDK8/sdk/8.0.412/Roslyn/bincore/csc.dll"|awk '{print toupper($1)}')" = 0593BFD4B56795C417429717F432DD28C5CB0A17B97127453DE303B8D3779093
+          test "$($SDK10/dotnet --version)" = 10.0.302
+          "$ROOT/tools/ilspycmd/ilspycmd" --version|grep -F 10.1.1.8388
+          test -f "$ROOT/tools/dnlib/lib/netstandard2.0/dnlib.dll"
+          cat > "$ROOT/toolchain.env" <<ENV
+          export DOTNET_ROOT='$SDK8'
+          export EE_DOTNET='$SDK8/dotnet'
+          export EE_CSC_DLL='$SDK8/sdk/8.0.412/Roslyn/bincore/csc.dll'
+          export EE_MSBUILD_DLL='$SDK8/sdk/8.0.412/MSBuild.dll'
+          export EE_ILSPYCMD='$ROOT/tools/ilspycmd/ilspycmd'
+          export EE_DNLIB_DLL='$ROOT/tools/dnlib/lib/netstandard2.0/dnlib.dll'
+          export DOTNET_CLI_HOME='$ROOT/dotnet-home'
+          export NUGET_PACKAGES='$ROOT/nuget-packages'
+          export PATH='$SDK8:$ROOT/tools/ilspycmd':\$PATH
+          ENV
+          echo MAINLAB_ENVIRONMENT_READY
+          EOF
+          chmod +x "$HANDOFF/RESTORE_TOOLCHAIN.sh"
+          find "$HANDOFF" -type f -print0|sort -z|xargs -0 sha256sum > "$HANDOFF/SHA256SUMS.txt"
+          ARCHIVE="$GITHUB_WORKSPACE/EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz"
+          tar --sort=name --mtime='UTC 2026-07-24 00:00:00' --owner=0 --group=0 --numeric-owner -czf "$ARCHIVE" -C "$ROOT" handoff
+          sha256sum "$ARCHIVE" | tee "$ARCHIVE.sha256"
+
+      - name: Upload transport artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EndlessExpanse-LabIV-Toolchain-Transport-V2
+          path: |
+            EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz
+            EndlessExpanse_LabIV_Toolchain_8.0.412_ILSpy10.1.1_dnlib4.5.0.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0

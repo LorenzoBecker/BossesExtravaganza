@@ -1,0 +1,65 @@
+name: Lab IV D3 PowerShell 5.1 ASCII Final
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse-ascii-final:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Recreate exact ASCII scripts and parse
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installGzip = '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'
+          $rollbackGzip = 'H4sIAAAAAAAC/8VWbW/bNhD+rl9BeAYkYaPmuEmdGsgH1ZJrd7Ed2E4KNC0KRTo33CRRI+k07pb/viP1YqWL+4J9WD4Urni8e+655+74k4A/t0yAJPQOhGQ8JyfekXU9ypIU1EuWJyz/6LjvrSISUeZYBP+ur6KUJZGCOVfzbZouRJgVaqetzLFUAi+9776KMlhyrn6xfujajCcBIooVF7sfvLrkaXoTxX+8ZQU5I85rznJ6Ealb0r1YrWLBCqXxELu2exfmmKaU4X0R5RLGEKmtgMn25sNdzzvqeT0ahvQimNFljwZ9OlrM10t/tF7Rub+eXoXUfzml/jygY3/kByFdhrPFlX/ufWaF7VquZa1A0RViixUmBYReVRT3vZ7VDYXgwo8VfrgQsAEBeQwI214pXth4fl8gCZDUYFe3Uf/kuTbwT3p+Pzh+NvCfHx8fnx69eN4fDU5Oj3rB6LT37MWLo8FRbzAa9PyTcHA66vsnR/54fOKPg+NBEASDY9uyNtvcRCavEOKciwwJ/gzJGMk1hP1liC2L3tCrT1xzIACJysn1aicVZN504emz98Mhuqt9OMbeWwuWOa5rPVgW25DG2XA4lWUp39wyBasiisF5VHvXrVB8+1qtNH2FqFvBPxF7zBEhE4TWh4RvCW0H8GzyYAI8CosE73XjHKCnUlUTl9joQn4hp8k2WRXsD7Ax966KxEdQ6PzrHttISr6epJilMMfYTuXWJTQHYh8IX/NYEtM5B5JwKRkIErObVP+PKSKB5DzL8CPcRyi7DHJ10CMZkipyR+eGMtHWZ2RVpEzROh/zsbIzudAcq+CsQdY251hCEZUE1F7M0XpXABnxXEUsB9EqayeooFfWeHzPpIrw57B20cGydkXVNd9kvDUzvgNk43YP8xyiTRth7ZAEfYSnBN/eRZrm4f62QYgsb6NUzykNUJd0EkmM56cfuWDqNiOria87/mkErqfNvTW/LAoQ0/wuEgxpcFyTRe1d6+LAJGlBxkBUR2qyY3nMhZahR3ylIE+2Z4fm0eJGgriDsyqiTs3yk4QabqgvJWQ36U6rleylPOJZgUtHD0NPZ16eICcivmV3egpeP22MVdL22AaLAvIlRImzZ8RS2L6l1jdcQBRjA3dREPiV5aR27oX4hYGs28JMgFzjOyOltac1ohE350934lTqH3oAAMLQLrARuSi9eZV8pWMP7ae//3rg+zvbbYNr9a6GDkDeTi+0unKc3xIXlpaWdtFprpRz7QGbc8PyKE2Rln3+AZMFl+C4ulRdbJ6sqLokwBVL6Fj3Cjb/Dv9mMyzlZJJlUtrG9iM8GpB11zq29/Ss8IK+Z67htP2ZXL/asgSZm8Mn/ctxUb8rM9kde45ZY99CkeJMT34wSn2N3uxwU5tYZWboMuN3xl93E6USWiJBFHSKJSXmXyPY/RqoIpcpa05wOf9NFlucJagOc9+ASKhfifbQpAhwlmAVzKL/l89yAbF8w6saaBmYOdj21n7KlLftKV7xfpc81yJaRp8IDbFp9XONXK7Hp4gVPeGbTo0Fz+hrNGyWqQnn1Y8Rszr+w3PHbmu10mnt24zAqJwgRqaPY7sda69WjezQ2K3X3D7QDItaFe8Jy0ekk0ZU+35vNKHEFlogDrmtSvbIa7XZ9LU3OLCBTrjUj8vF+flLf/SbTn4dLmfTeWh/adQZmc0rIDPAoL1QvzT185hB3uxsw6KposlBT/F90zwQQInjJ9u/HF3O8YHj6g0dRyqu33SNMM37U1Pw4Zv0m+x1pCVkXydoCfFWyKZhaOuRS1Y4uHOV7rTCWY562Ne9qgfFdiJfX8DNg0ebHl7TFSHu90imYe9geR/a76d2fcPRZHEZlsJ+xKsX3sdQaEfeDMeVpq/Tnsb/H+UP1j9XR83B9A0AAA=='
+
+          function Expand-GzipBase64([string]$Encoded, [string]$Path) {
+            $compressed = [Convert]::FromBase64String($Encoded)
+            $input = New-Object IO.MemoryStream(,$compressed)
+            $gzip = New-Object IO.Compression.GZipStream($input, [IO.Compression.CompressionMode]::Decompress)
+            $output = New-Object IO.MemoryStream
+            $gzip.CopyTo($output)
+            $gzip.Dispose(); $input.Dispose()
+            [IO.File]::WriteAllBytes($Path, $output.ToArray())
+            $output.Dispose()
+          }
+
+          $installPath = "$env:RUNNER_TEMP\Install-EndlessExpanse-D3.ps1"
+          $rollbackPath = "$env:RUNNER_TEMP\Rollback-EndlessExpanse-D2.ps1"
+          Expand-GzipBase64 $installGzip $installPath
+          Expand-GzipBase64 $rollbackGzip $rollbackPath
+
+          $expected = @{
+            $installPath = '0D6E5E8787FC974E9F7407161C9A3B0E9CBA122600C6262195224B322DBB2E1D'
+            $rollbackPath = '028331AC588650F21663CB856344146E594343A99BEA109B4D3EAE2D1EFB3642'
+          }
+          $results = @()
+          $totalErrors = 0
+          foreach ($path in @($installPath, $rollbackPath)) {
+            $tokens = $null; $errors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+            $hash = (Get-FileHash $path -Algorithm SHA256).Hash
+            $totalErrors += $errors.Count
+            $results += [pscustomobject]@{ File=[IO.Path]::GetFileName($path); Sha256=$hash; HashMatches=($hash -eq $expected[$path]); TokenCount=$tokens.Count; ErrorCount=$errors.Count; Errors=@($errors | ForEach-Object { $_.Message }) }
+          }
+          $report = [pscustomobject]@{ PowerShellVersion=$PSVersionTable.PSVersion.ToString(); TotalErrors=$totalErrors; Results=$results }
+          $report | ConvertTo-Json -Depth 6 | Set-Content "$env:RUNNER_TEMP\ps51-ascii-final.json" -Encoding UTF8
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) { throw 'Not Windows PowerShell 5.1' }
+          if (@($results | Where-Object { -not $_.HashMatches }).Count -ne 0) { throw 'Hash mismatch' }
+          if ($totalErrors -ne 0) { throw "Parser errors: $totalErrors" }
+          Write-Host 'POWERSHELL_5_1_PARSE_PASS'
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LabIV-D3-PS51-ASCII-Final
+          path: ${{ runner.temp }}\ps51-ascii-final.json
+          if-no-files-found: error
+          retention-days: 1

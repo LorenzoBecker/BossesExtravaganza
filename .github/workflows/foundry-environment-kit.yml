@@ -181,21 +181,55 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p work/artifacts
-          tar -C work/toolchain -czf work/artifacts/foundry-dotnet-10.0.301-linux-x64-installed.tar.gz dotnet
-          tar -C work/toolchain -czf work/artifacts/foundry-nuget-global-packages-net10-avalonia12.1-win-x64.tar.gz nuget-packages
-          cp work/downloads/* work/artifacts/
+          mkdir -p work/artifacts/sdk-linux work/artifacts/sdk-windows work/artifacts/nuget-parts work/artifacts/evidence
+          linux_archive=$(awk -F '\t' '$1=="linux-x64" {print $4}' work/evidence/sdk-official-metadata.tsv)
+          windows_archive=$(awk -F '\t' '$1=="win-x64" {print $4}' work/evidence/sdk-official-metadata.tsv)
+          cp "work/downloads/$linux_archive" work/artifacts/sdk-linux/
+          cp "work/downloads/$windows_archive" work/artifacts/sdk-windows/
+          tar -C work/toolchain -czf work/foundry-nuget-global-packages-net10-avalonia12.1-win-x64.tar.gz nuget-packages
+          split -b 300M -d -a 2 \
+            work/foundry-nuget-global-packages-net10-avalonia12.1-win-x64.tar.gz \
+            work/artifacts/nuget-parts/foundry-nuget-cache.tar.gz.part-
           cp work/seed/packages.lock.json work/evidence/seed-packages.lock.json
           cp work/offline.NuGet.Config work/evidence/offline.NuGet.Config.template
-          (cd work/artifacts && sha256sum * | LC_ALL=C sort) > work/evidence/ARTIFACT_SHA256SUMS.txt
-          tar -C work -czf work/artifacts/foundry-environment-evidence.tar.gz evidence
-          ls -lh work/artifacts | tee work/evidence/artifact-sizes.txt
+          find work/artifacts -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum \
+            > work/evidence/TRANSFER_COMPONENT_SHA256SUMS.txt
+          tar -C work -czf work/artifacts/evidence/foundry-environment-evidence.tar.gz evidence
+          find work/artifacts -type f -printf '%p\t%s bytes\n' | LC_ALL=C sort \
+            | tee work/evidence/transfer-component-sizes.txt
 
-      - name: Upload exact Foundry environment kit
+      - name: Upload official Linux SDK
         uses: actions/upload-artifact@v4
         with:
-          name: MandateUIFoundry-EnvironmentKit-10.0.301-Avalonia12.1.0
-          path: work/artifacts/*
+          name: Foundry-SDK-10.0.301-Linux-x64-Official
+          path: work/artifacts/sdk-linux/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload official Windows SDK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Foundry-SDK-10.0.301-Windows-x64-Official
+          path: work/artifacts/sdk-windows/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload split offline NuGet cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: Foundry-NuGet-Cache-net10-Avalonia12.1-win-x64-Parts
+          path: work/artifacts/nuget-parts/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload environment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Foundry-Environment-Evidence
+          path: work/artifacts/evidence/*
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

@@ -1,0 +1,201 @@
+name: Foundry Environment Kit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-kit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      SDK_VERSION: 10.0.301
+      AVALONIA_VERSION: 12.1.0
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+    steps:
+      - name: Checkout relay branch
+        uses: actions/checkout@v4
+
+      - name: Prepare system probes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb zip unzip python3 ca-certificates curl
+          mkdir -p work/downloads work/toolchain/dotnet work/toolchain/nuget-packages work/evidence work/seed
+          python3 --version | tee work/evidence/python-version.txt
+          xvfb-run --help >/dev/null
+          Xvfb -version 2>&1 | head -n 5 | tee work/evidence/xvfb-version.txt || true
+          zip -v | head -n 3 | tee work/evidence/zip-version.txt
+          sha256sum --version | head -n 1 | tee work/evidence/sha256-version.txt
+
+      - name: Resolve and authenticate exact official SDK archives
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fL --retry 5 --connect-timeout 30 \
+            https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json \
+            -o work/evidence/dotnet-10-releases.json
+          python3 - <<'PY'
+          import json, pathlib
+          version = "10.0.301"
+          data = json.loads(pathlib.Path("work/evidence/dotnet-10-releases.json").read_text())
+          found = {}
+          for release in data.get("releases", []):
+              sdks = []
+              if isinstance(release.get("sdk"), dict):
+                  sdks.append(release["sdk"])
+              sdks.extend(x for x in release.get("sdks", []) if isinstance(x, dict))
+              for sdk in sdks:
+                  if sdk.get("version") != version:
+                      continue
+                  for f in sdk.get("files", []):
+                      rid = f.get("rid")
+                      if rid in {"linux-x64", "win-x64"}:
+                          found[rid] = f
+          missing = {"linux-x64", "win-x64"} - set(found)
+          if missing:
+              raise SystemExit(f"Missing official SDK metadata: {sorted(missing)}")
+          out = pathlib.Path("work/evidence/sdk-official-metadata.tsv")
+          out.write_text("\n".join(
+              f"{rid}\t{found[rid]['url']}\t{found[rid]['hash']}\t{found[rid]['name']}"
+              for rid in ("linux-x64", "win-x64")
+          ) + "\n")
+          PY
+          while IFS=$'\t' read -r rid url expected name; do
+            dest="work/downloads/$name"
+            curl -fL --retry 5 --connect-timeout 30 "$url" -o "$dest"
+            actual=$(sha512sum "$dest" | awk '{print toupper($1)}')
+            expected=$(printf '%s' "$expected" | tr '[:lower:]' '[:upper:]')
+            test "$actual" = "$expected"
+            printf '%s  %s\n' "$actual" "$name" >> work/evidence/SDK_SHA512SUMS.txt
+            sha256sum "$dest" >> work/evidence/SDK_SHA256SUMS.txt
+          done < work/evidence/sdk-official-metadata.tsv
+
+      - name: Install exact Linux SDK locally
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          linux_archive=$(awk -F '\t' '$1=="linux-x64" {print $4}' work/evidence/sdk-official-metadata.tsv)
+          tar -xzf "work/downloads/$linux_archive" -C work/toolchain/dotnet
+          export DOTNET_ROOT="$PWD/work/toolchain/dotnet"
+          export PATH="$DOTNET_ROOT:$PATH"
+          export DOTNET_CLI_HOME="$PWD/work/toolchain/dotnet-home"
+          export NUGET_PACKAGES="$PWD/work/toolchain/nuget-packages"
+          mkdir -p "$DOTNET_CLI_HOME" "$NUGET_PACKAGES"
+          test "$(dotnet --version)" = "$SDK_VERSION"
+          dotnet --version | tee work/evidence/dotnet-version.txt
+          dotnet --list-sdks | tee work/evidence/dotnet-list-sdks.txt
+          dotnet --info | tee work/evidence/dotnet-info.txt
+
+      - name: Seed exact Avalonia and win-x64 offline cache
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export DOTNET_ROOT="$PWD/work/toolchain/dotnet"
+          export PATH="$DOTNET_ROOT:$PATH"
+          export DOTNET_CLI_HOME="$PWD/work/toolchain/dotnet-home"
+          export NUGET_PACKAGES="$PWD/work/toolchain/nuget-packages"
+          cat > work/seed/Foundry.Toolchain.Seed.csproj <<'XML'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <OutputType>Exe</OutputType>
+              <TargetFramework>net10.0</TargetFramework>
+              <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
+              <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+              <NuGetAudit>false</NuGetAudit>
+              <SelfContained>true</SelfContained>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="Avalonia" Version="12.1.0" />
+              <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+              <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+              <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+            </ItemGroup>
+          </Project>
+          XML
+          cat > work/seed/Program.cs <<'CS'
+          using System;
+          using Avalonia;
+          internal static class Program
+          {
+              public static void Main()
+              {
+                  Console.WriteLine(typeof(Application).Assembly.FullName);
+              }
+          }
+          CS
+          dotnet restore work/seed/Foundry.Toolchain.Seed.csproj -p:NuGetAudit=false \
+            | tee work/evidence/seed-restore-base.log
+          dotnet restore work/seed/Foundry.Toolchain.Seed.csproj --runtime win-x64 -p:NuGetAudit=false \
+            | tee work/evidence/seed-restore-win-x64.log
+          dotnet build work/seed/Foundry.Toolchain.Seed.csproj -c Release --no-restore \
+            -p:TreatWarningsAsErrors=true | tee work/evidence/seed-build.log
+          xvfb-run -a dotnet run --project work/seed/Foundry.Toolchain.Seed.csproj \
+            -c Release --no-build --no-restore | tee work/evidence/seed-avalonia-probe.log
+          dotnet publish work/seed/Foundry.Toolchain.Seed.csproj -c Release --runtime win-x64 \
+            --self-contained true --no-restore -o work/seed/publish-win-x64 \
+            | tee work/evidence/seed-publish-win-x64.log
+          find work/toolchain/nuget-packages -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
+            | LC_ALL=C sort > work/evidence/nuget-package-inventory.txt
+          find work/seed/publish-win-x64 -type f -printf '%P\n' \
+            | LC_ALL=C sort > work/evidence/win-x64-publish-inventory.txt
+
+      - name: Prove locked restore with all network sources removed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export DOTNET_ROOT="$PWD/work/toolchain/dotnet"
+          export PATH="$DOTNET_ROOT:$PATH"
+          export DOTNET_CLI_HOME="$PWD/work/toolchain/dotnet-home-offline"
+          export NUGET_PACKAGES="$PWD/work/toolchain/nuget-packages"
+          mkdir -p "$DOTNET_CLI_HOME"
+          cat > work/offline.NuGet.Config <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources><clear /></packageSources>
+            <config>
+              <add key="globalPackagesFolder" value="$PWD/work/toolchain/nuget-packages" />
+            </config>
+          </configuration>
+          XML
+          rm -rf work/seed/obj work/seed/bin work/seed/publish-win-x64-offline
+          dotnet restore work/seed/Foundry.Toolchain.Seed.csproj --runtime win-x64 \
+            --locked-mode --configfile work/offline.NuGet.Config -p:NuGetAudit=false \
+            | tee work/evidence/offline-locked-restore.log
+          dotnet build work/seed/Foundry.Toolchain.Seed.csproj -c Release --no-restore \
+            -p:TreatWarningsAsErrors=true | tee work/evidence/offline-build.log
+          xvfb-run -a dotnet run --project work/seed/Foundry.Toolchain.Seed.csproj \
+            -c Release --no-build --no-restore | tee work/evidence/offline-avalonia-probe.log
+          dotnet publish work/seed/Foundry.Toolchain.Seed.csproj -c Release --runtime win-x64 \
+            --self-contained true --no-restore -o work/seed/publish-win-x64-offline \
+            | tee work/evidence/offline-publish-win-x64.log
+          printf 'FOUNDRY_TOOLCHAIN_SEED_OFFLINE_READY\n' | tee work/evidence/FOUNDRY_TOOLCHAIN_SEED_OFFLINE_READY.txt
+
+      - name: Package portable environment components
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p work/artifacts
+          tar -C work/toolchain -czf work/artifacts/foundry-dotnet-10.0.301-linux-x64-installed.tar.gz dotnet
+          tar -C work/toolchain -czf work/artifacts/foundry-nuget-global-packages-net10-avalonia12.1-win-x64.tar.gz nuget-packages
+          cp work/downloads/* work/artifacts/
+          cp work/seed/packages.lock.json work/evidence/seed-packages.lock.json
+          cp work/offline.NuGet.Config work/evidence/offline.NuGet.Config.template
+          (cd work/artifacts && sha256sum * | LC_ALL=C sort) > work/evidence/ARTIFACT_SHA256SUMS.txt
+          tar -C work -czf work/artifacts/foundry-environment-evidence.tar.gz evidence
+          ls -lh work/artifacts | tee work/evidence/artifact-sizes.txt
+
+      - name: Upload exact Foundry environment kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: MandateUIFoundry-EnvironmentKit-10.0.301-Avalonia12.1.0
+          path: work/artifacts/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

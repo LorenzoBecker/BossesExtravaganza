@@ -15,13 +15,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract exact Git blobs without line-ending conversion
+        shell: cmd
+        run: |
+          if not exist exact mkdir exact
+          git show HEAD:labiv-r1-ps51/Install-EndlessExpanse-Contracts-R1.ps1 > exact\Install-EndlessExpanse-Contracts-R1.ps1
+          git show HEAD:labiv-r1-ps51/Rollback-EndlessExpanse-D3.ps1 > exact\Rollback-EndlessExpanse-D3.ps1
+
       - name: Parse exact scripts with Windows PowerShell 5.1
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           $expected = @{
-            'labiv-r1-ps51/Install-EndlessExpanse-Contracts-R1.ps1' = '13280D8783D607D10C6D542CC72923FC8CF3E4548027AB15E4C3070A74A12D7E'
-            'labiv-r1-ps51/Rollback-EndlessExpanse-D3.ps1' = '74BA5982B6C6B9D3DE13216C8BCA75D22E45F55F726897CCA14F3DE479C79F4C'
+            'exact/Install-EndlessExpanse-Contracts-R1.ps1' = '13280D8783D607D10C6D542CC72923FC8CF3E4548027AB15E4C3070A74A12D7E'
+            'exact/Rollback-EndlessExpanse-D3.ps1' = '74BA5982B6C6B9D3DE13216C8BCA75D22E45F55F726897CCA14F3DE479C79F4C'
           }
           if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
             throw "Windows PowerShell 5.1 requis, observe=$($PSVersionTable.PSVersion)"
@@ -57,6 +64,7 @@ jobs:
           Write-Host 'CONTRACTS_R1_PS51_PARSE_PASS'
 
       - name: Upload parse evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: LabIV-Contracts-R1-PS51-Evidence

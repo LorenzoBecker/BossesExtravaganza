@@ -1,0 +1,65 @@
+name: Lab IV R1 PowerShell 5.1 Parse
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse-r1-operator-scripts:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse exact scripts with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = @{
+            'labiv-r1-ps51/Install-EndlessExpanse-Contracts-R1.ps1' = '13280D8783D607D10C6D542CC72923FC8CF3E4548027AB15E4C3070A74A12D7E'
+            'labiv-r1-ps51/Rollback-EndlessExpanse-D3.ps1' = '74BA5982B6C6B9D3DE13216C8BCA75D22E45F55F726897CCA14F3DE479C79F4C'
+          }
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
+            throw "Windows PowerShell 5.1 requis, observe=$($PSVersionTable.PSVersion)"
+          }
+          $results = @()
+          foreach ($relative in $expected.Keys | Sort-Object) {
+            $path = Join-Path $env:GITHUB_WORKSPACE $relative
+            $sha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToUpperInvariant()
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+            $results += [ordered]@{
+              File = $relative
+              Sha256 = $sha
+              ExpectedSha256 = $expected[$relative]
+              HashMatches = ($sha -eq $expected[$relative])
+              ErrorCount = @($errors).Count
+              Errors = @($errors | ForEach-Object { $_.ToString() })
+            }
+          }
+          $totalErrors = ($results | Measure-Object -Property ErrorCount -Sum).Sum
+          $evidence = [ordered]@{
+            PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+            RunnerOS = $env:RUNNER_OS
+            TotalErrors = [int]$totalErrors
+            AllHashesMatch = -not ($results | Where-Object { -not $_.HashMatches })
+            Results = $results
+          }
+          $evidence | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath ps51-evidence.json -Encoding UTF8
+          Get-Content -LiteralPath ps51-evidence.json
+          if (-not $evidence.AllHashesMatch) { throw 'Hash mismatch on exact operator scripts.' }
+          if ($evidence.TotalErrors -ne 0) { throw "PowerShell parse errors=$($evidence.TotalErrors)" }
+          Write-Host 'CONTRACTS_R1_PS51_PARSE_PASS'
+
+      - name: Upload parse evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: LabIV-Contracts-R1-PS51-Evidence
+          path: ps51-evidence.json
+          if-no-files-found: error
+          retention-days: 1

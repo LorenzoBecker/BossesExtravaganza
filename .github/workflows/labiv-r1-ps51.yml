@@ -22,46 +22,60 @@ jobs:
           git show HEAD:labiv-r1-ps51/Install-EndlessExpanse-Contracts-R1.ps1 > exact\Install-EndlessExpanse-Contracts-R1.ps1
           git show HEAD:labiv-r1-ps51/Rollback-EndlessExpanse-D3.ps1 > exact\Rollback-EndlessExpanse-D3.ps1
 
-      - name: Parse exact scripts with Windows PowerShell 5.1
+      - name: Collect Windows PowerShell 5.1 evidence
         shell: powershell
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference = 'Continue'
           $expected = @{
             'exact/Install-EndlessExpanse-Contracts-R1.ps1' = '13280D8783D607D10C6D542CC72923FC8CF3E4548027AB15E4C3070A74A12D7E'
             'exact/Rollback-EndlessExpanse-D3.ps1' = '74BA5982B6C6B9D3DE13216C8BCA75D22E45F55F726897CCA14F3DE479C79F4C'
           }
-          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
-            throw "Windows PowerShell 5.1 requis, observe=$($PSVersionTable.PSVersion)"
-          }
           $results = @()
           foreach ($relative in $expected.Keys | Sort-Object) {
             $path = Join-Path $env:GITHUB_WORKSPACE $relative
-            $sha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToUpperInvariant()
-            $tokens = $null
-            $errors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
-            $results += [ordered]@{
+            $row = [ordered]@{
               File = $relative
-              Sha256 = $sha
+              Exists = (Test-Path -LiteralPath $path -PathType Leaf)
+              Sha256 = $null
               ExpectedSha256 = $expected[$relative]
-              HashMatches = ($sha -eq $expected[$relative])
-              ErrorCount = @($errors).Count
-              Errors = @($errors | ForEach-Object { $_.ToString() })
+              HashMatches = $false
+              ErrorCount = -1
+              Errors = @()
+              Exception = $null
             }
+            try {
+              if (-not $row.Exists) { throw "File absent: $path" }
+              $row.Sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToUpperInvariant()
+              $row.HashMatches = ($row.Sha256 -eq $row.ExpectedSha256)
+              $tokens = $null
+              $parseErrors = $null
+              [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+              $row.ErrorCount = @($parseErrors).Count
+              $row.Errors = @($parseErrors | ForEach-Object { $_.ToString() })
+            }
+            catch {
+              $row.Exception = $_.Exception.ToString()
+            }
+            $results += [pscustomobject]$row
           }
-          $totalErrors = ($results | Measure-Object -Property ErrorCount -Sum).Sum
+          $validPs51 = ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -eq 1)
+          $totalErrors = 0
+          foreach ($row in $results) {
+            if ($row.ErrorCount -ge 0) { $totalErrors += [int]$row.ErrorCount } else { $totalErrors += 1 }
+          }
+          $allHashes = -not [bool]($results | Where-Object { -not $_.HashMatches })
+          $noExceptions = -not [bool]($results | Where-Object { $_.Exception })
           $evidence = [ordered]@{
             PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+            IsWindowsPowerShell51 = $validPs51
             RunnerOS = $env:RUNNER_OS
-            TotalErrors = [int]$totalErrors
-            AllHashesMatch = -not ($results | Where-Object { -not $_.HashMatches })
+            TotalErrors = $totalErrors
+            AllHashesMatch = $allHashes
+            NoExceptions = $noExceptions
             Results = $results
           }
-          $evidence | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath ps51-evidence.json -Encoding UTF8
+          $evidence | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath ps51-evidence.json -Encoding UTF8
           Get-Content -LiteralPath ps51-evidence.json
-          if (-not $evidence.AllHashesMatch) { throw 'Hash mismatch on exact operator scripts.' }
-          if ($evidence.TotalErrors -ne 0) { throw "PowerShell parse errors=$($evidence.TotalErrors)" }
-          Write-Host 'CONTRACTS_R1_PS51_PARSE_PASS'
 
       - name: Upload parse evidence
         if: always()
@@ -71,3 +85,13 @@ jobs:
           path: ps51-evidence.json
           if-no-files-found: error
           retention-days: 1
+
+      - name: Enforce PS5.1 validation result
+        shell: powershell
+        run: |
+          $e = Get-Content -LiteralPath ps51-evidence.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          if (-not $e.IsWindowsPowerShell51) { throw "Windows PowerShell 5.1 non prouve: $($e.PowerShellVersion)" }
+          if (-not $e.NoExceptions) { throw 'Exception pendant la collecte PowerShell.' }
+          if (-not $e.AllHashesMatch) { throw 'Hash mismatch on exact operator scripts.' }
+          if ([int]$e.TotalErrors -ne 0) { throw "PowerShell parse errors=$($e.TotalErrors)" }
+          Write-Host 'CONTRACTS_R1_PS51_PARSE_PASS'
